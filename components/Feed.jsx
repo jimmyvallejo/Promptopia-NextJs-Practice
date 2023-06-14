@@ -4,10 +4,18 @@ import { useState, useEffect } from "react"
 
 import { PromptCard } from "./PromptCard"
 
+import { useSession } from "next-auth/react";
+
+import { useRouter } from "next/navigation";
+
+
 
 
 const PromptCardList = ({ posts, handleTagClick }) => {
   
+    const { data: session } = useSession();
+
+    const router = useRouter()
 
   return (
     <div className="mt-16 prompt_layout">
@@ -31,22 +39,47 @@ const Feed = () => {
   
   const [searchText, setsearchText] = useState("")
   const [posts, setPosts] = useState([])
+  const [displayedPosts, setDisplayedPosts] = useState([])
 
 
-  const handleSearchChange = (e) => {
- 
-  }
+
 
 const fetchPosts = async () => {
   const response = await fetch("/api/prompt");
   const data = await response.json();
 
   setPosts(data);
+  setDisplayedPosts(data)
 };
 
 useEffect(() => {
   fetchPosts();
 }, []);
+
+useEffect(() => {
+  
+  let lowerCase = searchText.toLowerCase()
+  
+  let filtered = posts.filter((elem) => {
+    console.log(elem)
+    if (elem.creator.email.toLowerCase().includes(lowerCase) || elem.prompt.toLowerCase().includes(lowerCase) || elem.tag.toLowerCase().includes(lowerCase) ) {
+      return true;
+    }
+    return false;
+  });
+  
+
+  setTimeout(() => {
+   setDisplayedPosts(filtered);
+}, "700");
+}, [searchText, posts]);
+
+
+
+
+const handleTagClick = (elem) => {
+  setsearchText(elem)
+} 
 
 
   return (
@@ -56,12 +89,12 @@ useEffect(() => {
         type="text"
         placeholder="Search for prompts"
         value={searchText}
-        onChange={handleSearchChange}
+        onChange={(e) => setsearchText(e.target.value)}
         required
         className="search_input peer"
         />
        </form>
-       <PromptCardList posts={posts} handleTagClick={() => {}} />
+       <PromptCardList posts={displayedPosts} handleTagClick={handleTagClick} />
       </section>
   )
 }
